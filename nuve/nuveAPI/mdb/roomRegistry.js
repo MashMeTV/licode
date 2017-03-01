@@ -62,17 +62,18 @@ exports.assignErizoControllerToRoom = function(room, erizoControllerId, callback
         }
       });
     }
-
-  });
-  db.erizoControllers.findOne({_id: db.ObjectId(erizoControllerId)}, function(err, notAssignedErizoController){
-    if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
-    if (notAssignedErizoController) {
-      room.erizoControllerId = db.ObjectId(erizoControllerId);
-
-      db.rooms.save( room, function(err, savedRoom){
+    else{
+      db.erizoControllers.findOne({_id: db.ObjectId(erizoControllerId)}, function(err, notAssignedErizoController){
         if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
+        if (notAssignedErizoController) {
+          room.erizoControllerId = db.ObjectId(erizoControllerId);
+
+          db.rooms.save( room, function(err, savedRoom){
+            if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
+          });
+          callback(notAssignedErizoController);
+        }
       });
-      callback(notAssignedErizoController);
     }
   });
 };
