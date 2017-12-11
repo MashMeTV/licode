@@ -49,32 +49,30 @@ exports.addRoom = function (room, callback) {
 };
 
 exports.assignErizoControllerToRoom = function(room, erizoControllerId, callback) {
-  return db.eval(function(id, erizoControllerId) {
-    var erizoController;
-    var room = db.rooms.findOne({_id: new ObjectId(id)});
-    if (!room) {
-      return erizoController;
+  db.rooms.findOne({_id: db.ObjectId(room._id)}, function(err, findRoom){
+    if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
+    if (!findRoom) {
+       callback(undefined);
     }
-
-    if (room.erizoControllerId) {
-      erizoController = db.erizoControllers.findOne({_id: room.erizoControllerId});
-      if (erizoController) {
-        return erizoController;
-      }
+    if (findRoom.erizoControllerId) {
+      db.erizoControllers.findOne({_id: findRoom.erizoControllerId}, function(err, assignedErizoController){
+        if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
+        if (assignedErizoController) {
+          callback(assignedErizoController);
+        }
+      });
     }
-
-    erizoController = db.erizoControllers.findOne({_id: new ObjectId(erizoControllerId)});
-
-    if (erizoController) {
-      room.erizoControllerId = new ObjectId(erizoControllerId);
-
-      db.rooms.save( room );
-    }
-    return erizoController;
-  }, room._id + '', erizoControllerId + '', function(error, erizoController) {
-    if (error) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(error));
-    if (callback) {
-      callback(erizoController);
+    else{
+      db.erizoControllers.findOne({_id: db.ObjectId(erizoControllerId)}, function(err, notAssignedErizoController){
+        if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
+        if (notAssignedErizoController) {
+          room.erizoControllerId = db.ObjectId(erizoControllerId);
+          db.rooms.save( room, function(err, savedRoom){
+            if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
+          });
+          callback(notAssignedErizoController);
+        }
+      });
     }
   });
 };
