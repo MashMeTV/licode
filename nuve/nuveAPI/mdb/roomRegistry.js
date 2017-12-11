@@ -1,4 +1,4 @@
-/*global require, exports*/
+/*global require, exports, ObjectId*/
 'use strict';
 var db = require('./dataBase').db;
 
@@ -67,7 +67,6 @@ exports.assignErizoControllerToRoom = function(room, erizoControllerId, callback
         if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
         if (notAssignedErizoController) {
           room.erizoControllerId = db.ObjectId(erizoControllerId);
-
           db.rooms.save( room, function(err, savedRoom){
             if (err) log.warn('message: assignErizoControllerToRoom error, ' + logger.objectToLog(err));
           });
