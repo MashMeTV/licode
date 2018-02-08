@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "./WebRtcConnection.h"
+#include "./MediaStream.h"
 #include "lib/ClockUtils.h"
 
 namespace erizo {
@@ -14,7 +14,7 @@ static constexpr erizo::duration kMinNotifyLayerInfoInterval = std::chrono::seco
 DEFINE_LOGGER(LayerDetectorHandler, "rtp.LayerDetectorHandler");
 
 LayerDetectorHandler::LayerDetectorHandler(std::shared_ptr<erizo::Clock> the_clock)
-    : clock_{the_clock}, connection_{nullptr}, enabled_{true}, initialized_{false},
+    : clock_{the_clock}, stream_{nullptr}, enabled_{true}, initialized_{false},
     last_event_sent_{clock_->now()} {
   for (uint32_t temporal_layer = 0; temporal_layer <= kMaxTemporalLayers; temporal_layer++) {
     video_frame_rate_list_.push_back(MovingIntervalRateStat{std::chrono::milliseconds(500), 10, .5, clock_});
@@ -35,7 +35,7 @@ void LayerDetectorHandler::read(Context *ctx, std::shared_ptr<DataPacket> packet
   RtcpHeader *chead = reinterpret_cast<RtcpHeader*>(packet->data);
   if (!chead->isRtcp() && enabled_ && packet->type == VIDEO_PACKET) {
     RtpHeader *rtp_header = reinterpret_cast<RtpHeader*>(packet->data);
-    RtpMap *codec = connection_->getRemoteSdpInfo().getCodecByExternalPayloadType(rtp_header->getPayloadType());
+    RtpMap *codec = stream_->getRemoteSdpInfo()->getCodecByExternalPayloadType(rtp_header->getPayloadType());
     if (codec && codec->encoding_name == "VP8") {
       packet->codec = "VP8";
       parseLayerInfoFromVP8(packet);
@@ -63,8 +63,8 @@ void LayerDetectorHandler::notifyLayerInfoChangedEvent() {
               temporal_layer, video_frame_rate_list_[temporal_layer].value());
   }
 
-  if (connection_) {
-    connection_->notifyToEventSink(
+  if (stream_) {
+    stream_->notifyToEventSink(
       std::make_shared<LayerInfoChangedEvent>(video_frame_width_list_,
         video_frame_height_list_, video_frame_rate_list));
   }
@@ -187,6 +187,9 @@ void LayerDetectorHandler::parseLayerInfoFromH264(std::shared_ptr<DataPacket> pa
   RTPPayloadH264* payload = h264_parser_.parseH264(
       start_buffer, packet->length - rtp_header->getHeaderLength());
 
+  int position = getSsrcPosition(rtp_header->getSSRC());
+  packet->compatible_spatial_layers = {position};
+
   if (payload->frameType == kH264IFrame) {
     packet->is_keyframe = true;
   } else {
@@ -206,11 +209,11 @@ void LayerDetectorHandler::notifyUpdate() {
     return;
   }
 
-  connection_ = pipeline->getService<WebRtcConnection>().get();
-  if (!connection_) {
+  stream_ = pipeline->getService<MediaStream>().get();
+  if (!stream_) {
     return;
   }
 
-  video_ssrc_list_ = connection_->getVideoSourceSSRCList();
+  video_ssrc_list_ = stream_->getVideoSourceSSRCList();
 }
 }  // namespace erizo
