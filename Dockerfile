@@ -15,4 +15,11 @@ RUN ./scripts/installErizo.sh -dfeacs && \
     ./nuve/installNuve.sh && \
     ./scripts/installBasicExample.sh
 
+
+FROM node:6-alpine
+
+WORKDIR /opt/licode
+
+COPY --from=0 /opt/licode .
+
 ENTRYPOINT ["./extras/docker/initDockerLicode.sh"]
