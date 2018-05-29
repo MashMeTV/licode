@@ -10,8 +10,8 @@ var express = require('express'),
     config = require('./../../licode_config');
 
 var options = {
-    key: fs.readFileSync('../../cert/key.pem').toString(),
-    cert: fs.readFileSync('../../cert/cert.pem').toString()
+    key: fs.readFileSync('../../cert/tls.key').toString(),
+    cert: fs.readFileSync('../../cert/tls.cert').toString()
 };
 
 if (config.erizoController.sslCaCerts) {
