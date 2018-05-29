@@ -11,7 +11,7 @@ var express = require('express'),
 
 var options = {
     key: fs.readFileSync('../../cert/tls.key').toString(),
-    cert: fs.readFileSync('../../cert/tls.cert').toString()
+    cert: fs.readFileSync('../../cert/tls.crt').toString()
 };
 
 if (config.erizoController.sslCaCerts) {
