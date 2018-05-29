@@ -192,7 +192,12 @@ app.use(function(req, res, next) {
 cleanExampleRooms(function() {
     getOrCreateRoom(defaultRoomName, undefined, undefined, function (roomId) {
         defaultRoom = roomId;
-        var server = https.createServer(options, app);
+        if (config.erizoController.listen_ssl) {
+            var server = https.createServer(options, app);
+        } else {
+            var http = require('http');
+            server = http.createServer();
+        }
         console.log('BasicExample started');
         server.listen(3004);
 
