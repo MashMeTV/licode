@@ -26,7 +26,7 @@ var checkTimestamp = function (ser, params) {
     lastC = lastParams.cnonce;
     newC = params.cnonce;
 
-    if (newTS < lastTS || (lastTS === newTS && lastC === newC)) {
+    if (lastTS === newTS && lastC === newC) {
         log.debug('message: checkTimestamp lastTimestamp: ' + lastTS + ', newTimestamp: ' + newTS +
             ', lastCnonce: ' + lastC + ', newCnonce: ' + newC);
         return false;
