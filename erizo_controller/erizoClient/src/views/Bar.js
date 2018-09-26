@@ -69,7 +69,12 @@ const Bar = (spec) => {
     waiting = setTimeout(show, 1000);
   };
 
-  document.getElementById(that.elementID).appendChild(that.div);
+  // Check for a passed DOM node.
+  if (typeof that.elementID === 'object' && typeof that.elementID.appendChild === 'function') {
+    that.elementID.appendChild(that.div);
+  } else {
+    document.getElementById(that.elementID).appendChild(that.div);
+  }
   that.div.appendChild(that.bar);
   that.bar.appendChild(that.link);
   that.link.appendChild(that.logo);
