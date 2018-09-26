@@ -115,7 +115,13 @@ const Speaker = (spec) => {
     show('none');
   }
 
-  document.getElementById(that.elementID).appendChild(that.div);
+  // Check for a passed DOM node.
+  if (typeof that.elementID === 'object' && typeof that.elementID.appendChild === 'function') {
+    that.elementID.appendChild(that.div);
+  } else {
+    document.getElementById(that.elementID).appendChild(that.div);
+  }
+  
   return that;
 };
 
