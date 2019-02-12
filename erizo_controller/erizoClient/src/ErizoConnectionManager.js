@@ -24,6 +24,11 @@ class ErizoConnection extends EventEmitterConst {
     spec.sessionId = ErizoSessionId;
     this.sessionId = ErizoSessionId;
 
+    if (!spec.streamRemovedListener) {
+      spec.streamRemovedListener = () => {};
+    }
+    this.streamRemovedListener = spec.streamRemovedListener;
+
     // Check which WebRTC Stack is installed.
     this.browser = ConnectionHelpers.getBrowser();
     if (this.browser === 'fake') {
@@ -63,6 +68,7 @@ class ErizoConnection extends EventEmitterConst {
 
       this.stack.peerConnection.onremovestream = (evt) => {
         this.emit(ConnectionEvent({ type: 'remove-stream', stream: evt.stream }));
+        this.streamRemovedListener(evt.stream.id);
       };
 
       this.stack.peerConnection.oniceconnectionstatechange = () => {
@@ -95,6 +101,11 @@ class ErizoConnection extends EventEmitterConst {
     if (!this.streamsMap.has(streamId)) {
       Logger.warning(`message: Cannot remove stream not in map, streamId: ${streamId}`);
       return;
+    }
+    if (stream.local) {
+      this.stack.removeStream(stream.stream);
+    } else if (this.streamsMap.size() === 1) {
+      this.streamRemovedListener(stream.getLabel());
     }
     this.streamsMap.remove(streamId);
   }
@@ -178,6 +189,7 @@ class ErizoConnectionManager {
     if (connection.streamsMap.size() === 0) {
       connection.close();
       if (this.ErizoConnectionsMap.get(connection.erizoId) !== undefined) {
+        delete this.ErizoConnectionsMap.get(connection.erizoId)['single-pc'];
         delete this.ErizoConnectionsMap.get(connection.erizoId)[connection.sessionId];
       }
     }
